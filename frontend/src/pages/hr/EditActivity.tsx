@@ -1,28 +1,19 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { Plus, Trash2, ArrowLeft } from 'lucide-react';
 import type { RequiredSkill } from '../../types';
 
-export default function CreateActivity() {
+export default function EditActivity() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { users } = useData();
 
   const managers = users.filter(u => u.role === 'MANAGER');
 
-  // Obtenir la date et heure actuelles au format datetime-local (YYYY-MM-DDThh:mm)
-  const getCurrentDateTime = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
-
+  // État du formulaire avec les mêmes noms de champs que CreateActivity
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -38,11 +29,6 @@ export default function CreateActivity() {
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const addSkill = () => setSkills([...skills, { skill_name: '', type: 'know_how', desired_level: 'medium', weight: 0.3 }]);
-  const removeSkill = (i: number) => setSkills(skills.filter((_, idx) => idx !== i));
-  const updateSkill = (i: number, updates: Partial<RequiredSkill>) =>
-    setSkills(skills.map((s, idx) => idx === i ? { ...s, ...updates } : s));
-
   // Départements statiques
   const departments = [
     { id: '1', name: 'Ressources Humaines' },
@@ -51,39 +37,56 @@ export default function CreateActivity() {
     { id: '4', name: 'Finance' }
   ];
 
+  useEffect(() => {
+    if (!id) return;
+
+    fetch(`http://localhost:3000/activities/${id}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Erreur lors de la récupération de l’activité');
+        return res.json();
+      })
+      .then(data => {
+        setForm({
+          title: data.title || '',
+          description: data.description || '',
+          maxParticipants: data.maxParticipants || 5,
+          departmentId: data.departmentId || '',
+          startDate: data.startDate ? new Date(data.startDate).toISOString().slice(0,16) : '',
+          endDate: data.endDate ? new Date(data.endDate).toISOString().slice(0,16) : '',
+        });
+
+        setSkills(
+          data.requiredSkills?.map((s: string) => ({
+            skill_name: s,
+            type: 'know_how',
+            desired_level: 'medium',
+            weight: 0.5
+          })) || [{ skill_name: '', type: 'know_how', desired_level: 'medium', weight: 0.5 }]
+        );
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Erreur lors du chargement de l’activité');
+      });
+  }, [id]);
+
+  const addSkill = () => setSkills([...skills, { skill_name: '', type: 'know_how', desired_level: 'medium', weight: 0.3 }]);
+  const removeSkill = (i: number) => setSkills(skills.filter((_, idx) => idx !== i));
+  const updateSkill = (i: number, updates: Partial<RequiredSkill>) =>
+    setSkills(skills.map((s, idx) => idx === i ? { ...s, ...updates } : s));
+
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
 
     if (!form.title.trim()) newErrors.title = 'Le titre est requis';
     if (!form.description.trim()) newErrors.description = 'La description est requise';
     if (!form.departmentId) newErrors.departmentId = 'Le département doit être sélectionné';
-    
-    // Validation de la date de début
-    if (!form.startDate) {
-      newErrors.startDate = 'La date de début est requise';
-    } else {
-      const startDateTime = new Date(form.startDate).getTime();
-      const currentDateTime = new Date().getTime();
-      
-      if (startDateTime < currentDateTime) {
-        newErrors.startDate = 'La date de début ne peut pas être dans le passé';
-      }
-    }
-    
-    // Validation de la date de fin
-    if (!form.endDate) {
-      newErrors.endDate = 'La date de fin est requise';
-    } else if (form.startDate) {
-      const startDateTime = new Date(form.startDate).getTime();
-      const endDateTime = new Date(form.endDate).getTime();
-      
-      if (endDateTime < startDateTime) {
-        newErrors.endDate = 'La date de fin doit être après la date de début';
-      }
-    }
-    
+    if (!form.startDate) newErrors.startDate = 'La date de début est requise';
+    if (!form.endDate) newErrors.endDate = 'La date de fin est requise';
+    if (form.startDate && form.endDate && new Date(form.endDate) < new Date(form.startDate))
+      newErrors.endDate = 'La date de fin doit être après la date de début';
     if (form.maxParticipants < 1) newErrors.maxParticipants = 'Le nombre de participants doit être au moins 1';
-    
+
     skills.forEach((s, i) => {
       if (!s.skill_name.trim()) newErrors[`skill_${i}`] = 'Le nom de la compétence est requis';
     });
@@ -94,7 +97,7 @@ export default function CreateActivity() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validate() || !id) return;
 
     try {
       const payload = {
@@ -104,25 +107,21 @@ export default function CreateActivity() {
         departmentId: form.departmentId,
         startDate: new Date(form.startDate),
         endDate: new Date(form.endDate),
-        requiredSkills: skills
-          .filter(s => s.skill_name)
-          .map(s => s.skill_name),
+        requiredSkills: skills.filter(s => s.skill_name).map(s => s.skill_name),
       };
 
-      console.log('Payload à envoyer :', payload);
-
-      const response = await fetch('http://localhost:3000/activities', {
-        method: 'POST',
+      const response = await fetch(`http://localhost:3000/activities/${id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Erreur lors de la création de l’activité');
+        throw new Error(data.message || 'Erreur lors de la mise à jour de l’activité');
       }
 
-      alert('Activité créée avec succès !');
+      alert('Activité mise à jour avec succès !');
       navigate('/hr/activities');
     } catch (err: any) {
       console.error(err);
@@ -137,8 +136,8 @@ export default function CreateActivity() {
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold">Créer une activité</h1>
-          <p className="text-sm text-muted-foreground">Définir une nouvelle activité et ses compétences requises</p>
+          <h1 className="text-2xl font-bold">Modifier l'activité</h1>
+          <p className="text-sm text-muted-foreground">Mettre à jour les informations et compétences de l’activité</p>
         </div>
       </div>
 
@@ -152,9 +151,7 @@ export default function CreateActivity() {
               <input
                 value={form.title}
                 onChange={e => setForm({ ...form, title: e.target.value })}
-                required
                 className="h-10 rounded-lg border px-3"
-                placeholder="Ex: Formation React Advanced"
               />
               {errors.title && <span className="text-red-500 text-xs">{errors.title}</span>}
             </div>
@@ -165,9 +162,7 @@ export default function CreateActivity() {
                 value={form.description}
                 onChange={e => setForm({ ...form, description: e.target.value })}
                 rows={3}
-                required
                 className="rounded-lg border px-3 py-2"
-                placeholder="Décrivez l'activité en détail..."
               />
               {errors.description && <span className="text-red-500 text-xs">{errors.description}</span>}
             </div>
@@ -190,7 +185,6 @@ export default function CreateActivity() {
                 value={form.departmentId}
                 onChange={e => setForm({ ...form, departmentId: e.target.value })}
                 className="h-10 rounded-lg border px-3"
-                required
               >
                 <option value="">-- Sélectionner --</option>
                 {departments.map(d => (
@@ -206,8 +200,6 @@ export default function CreateActivity() {
                 type="datetime-local"
                 value={form.startDate}
                 onChange={e => setForm({ ...form, startDate: e.target.value })}
-                min={getCurrentDateTime()} // Empêche la sélection d'une date passée dans le calendrier
-                required
                 className="h-10 rounded-lg border px-3"
               />
               {errors.startDate && <span className="text-red-500 text-xs">{errors.startDate}</span>}
@@ -219,8 +211,6 @@ export default function CreateActivity() {
                 type="datetime-local"
                 value={form.endDate}
                 onChange={e => setForm({ ...form, endDate: e.target.value })}
-                min={form.startDate || getCurrentDateTime()} // La date de fin ne peut pas être antérieure à la date de début
-                required
                 className="h-10 rounded-lg border px-3"
               />
               {errors.endDate && <span className="text-red-500 text-xs">{errors.endDate}</span>}
@@ -243,7 +233,7 @@ export default function CreateActivity() {
                   <label>Compétence</label>
                   <input
                     value={skill.skill_name}
-                    onChange={(e) => updateSkill(i, { skill_name: e.target.value })}
+                    onChange={e => updateSkill(i, { skill_name: e.target.value })}
                     placeholder="Nom de la compétence"
                     className="h-9 rounded-lg border px-3"
                   />
@@ -261,7 +251,7 @@ export default function CreateActivity() {
 
         <div className="flex justify-end gap-3">
           <button type="button" onClick={() => navigate(-1)} className="rounded-lg border px-6 py-2.5 text-sm">Annuler</button>
-          <button type="submit" className="rounded-lg bg-primary px-6 py-2.5 text-sm text-white">Créer l'activité</button>
+          <button type="submit" className="rounded-lg bg-primary px-6 py-2.5 text-sm text-white">Mettre à jour</button>
         </div>
       </form>
     </div>
