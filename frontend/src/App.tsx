@@ -66,10 +66,10 @@ export default function App() {
                   <Route path="/admin/analytics" element={<AdminAnalytics />} />
                 </Route>
 
-                {/* HR routes */}
+                {/* HR routes (accessible to HR and ADMIN) */}
                 <Route
                   element={
-                    <ProtectedRoute allowedRoles={['HR']}>
+                    <ProtectedRoute allowedRoles={['HR', 'ADMIN']}>
                       <DashboardLayout />
                     </ProtectedRoute>
                   }
@@ -82,10 +82,10 @@ export default function App() {
                   <Route path="/hr/analytics" element={<HRAnalytics />} />
                 </Route>
 
-                {/* Manager routes */}
+                {/* Manager routes (accessible to MANAGER and ADMIN) */}
                 <Route
                   element={
-                    <ProtectedRoute allowedRoles={['MANAGER']}>
+                    <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
                       <DashboardLayout />
                     </ProtectedRoute>
                   }
@@ -97,10 +97,10 @@ export default function App() {
                   <Route path="/manager/history" element={<ManagerHistory />} />
                 </Route>
 
-                {/* Employee routes */}
+                {/* Employee routes (accessible to EMPLOYEE and ADMIN) */}
                 <Route
                   element={
-                    <ProtectedRoute allowedRoles={['EMPLOYEE']}>
+                    <ProtectedRoute allowedRoles={['EMPLOYEE', 'ADMIN']}>
                       <DashboardLayout />
                     </ProtectedRoute>
                   }
