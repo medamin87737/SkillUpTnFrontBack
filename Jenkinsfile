@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    options {
+        // Empêche Jenkins de faire un checkout automatique supplémentaire.
+        // On gère nous-mêmes le checkout dans le stage "Checkout".
+        skipDefaultCheckout(true)
+    }
+
     stages {
 
         stage('Checkout') {
