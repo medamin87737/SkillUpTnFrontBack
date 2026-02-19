@@ -12,6 +12,8 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo "🔄 Cloning repository..."
+                // Nettoyer complètement le workspace pour éviter les anciens .git corrompus
+                deleteDir()
                 git branch: 'main', url: 'https://github.com/medamin87737/SkillUpTnFrontBack.git'
             }
         }
