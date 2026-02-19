@@ -57,7 +57,7 @@ export default function ManagerActivityDetail() {
             <div key={i} className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2">
               <span className="text-sm font-medium text-card-foreground">{s.skill_name}</span>
               <StatusBadge status={s.desired_level} />
-              <span className="text-xs text-muted-foreground">({Math.round(s.weight * 100)}%)</span>
+              <span className="text-xs text-muted-foreground">({Math.round((s.weight ?? 0) * 100)}%)</span>
             </div>
           ))}
         </div>

@@ -73,6 +73,8 @@ export type PriorityContext = 'develop_low' | 'consolidate_medium' | 'exploit_ex
 export interface RequiredSkill {
   skill_name: string
   desired_level: SkillLevel
+  type?: CompetenceType
+  weight?: number
 }
 
 export interface Activity {

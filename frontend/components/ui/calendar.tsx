@@ -54,8 +54,16 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
-        IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
+        // Use the Chevron custom component as per react-day-picker v9 typings.
+        // It receives props describing the direction; we ignore the props type
+        // here to keep the implementation simple while preserving behavior.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        Chevron: (props: any) =>
+          props.orientation === 'previous' ? (
+            <ChevronLeft className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          ),
       }}
       {...props}
     />
