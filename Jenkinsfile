@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git url: 'https://github.com/ton-utilisateur/SkillUpTN.git', branch: 'main'
+                git url: 'https://github.com/medamin87737/SkillUpTnFrontBack.git', branch: 'main'
             }
         }
 
