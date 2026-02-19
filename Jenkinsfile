@@ -2,42 +2,49 @@ pipeline {
     agent any
 
     environment {
-        // Variables d'environnement pour Docker
-        DOCKER_HOST = 'unix:///var/run/docker.sock'
+        BACKEND_IMAGE = "skillup-backend"
+        FRONTEND_IMAGE = "skillup-frontend"
     }
 
     stages {
-        stage('Clone Repository') {
+
+        stage('Checkout') {
             steps {
-                git url: 'https://github.com/medamin87737/SkillUpTnFrontBack.git', branch: 'main'
+                git branch: 'main', url: 'https://github.com/medamin87737/SkillUpTnFrontBack.git'
             }
         }
 
         stage('Build Docker Images') {
             steps {
-                sh 'docker-compose -f docker-compose.yml build'
+                script {
+                    sh 'docker-compose -f docker-compose.yml build'
+                }
             }
         }
 
-        stage('Run Tests Backend') {
+        stage('Run Backend Tests') {
             steps {
-                sh 'docker-compose -f docker-compose.yml run backend npm run test'
+                script {
+                    sh 'docker-compose -f docker-compose.yml run backend npm run test'
+                }
             }
         }
 
         stage('Deploy Containers') {
             steps {
-                sh 'docker-compose -f docker-compose.yml up -d'
+                script {
+                    sh 'docker-compose -f docker-compose.yml up -d'
+                }
             }
         }
     }
 
     post {
         success {
-            echo 'Pipeline terminé avec succès !'
+            echo "Pipeline terminé avec succès ✅"
         }
         failure {
-            echo 'Pipeline échoué.'
+            echo "Pipeline échoué ❌"
         }
     }
 }
