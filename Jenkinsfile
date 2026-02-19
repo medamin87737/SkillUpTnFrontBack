@@ -18,6 +18,23 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                echo "🔍 Running SonarQube analysis..."
+                withSonarQubeEnv('SonarQube') {
+                    script {
+                        def scannerHome = tool 'SonarScanner'
+                        sh """
+                          "${scannerHome}/bin/sonar-scanner" \
+                            -Dsonar.projectKey=SkillUpTN \
+                            -Dsonar.projectName=SkillUpTN \
+                            -Dsonar.sources=backend,frontend
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Build Docker Images') {
             steps {
                 echo "🛠 Building Docker images..."
