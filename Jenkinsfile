@@ -18,29 +18,28 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 echo "🛠 Building Docker images..."
-                // exécuter avec sudo pour Docker
-                sh 'sudo docker-compose -f docker-compose.yml build'
+                sh 'docker compose -f docker-compose.yml build'
             }
         }
 
         stage('Run Backend Tests') {
             steps {
                 echo "🧪 Running backend tests..."
-                sh 'sudo docker-compose -f docker-compose.yml run backend npm run test'
+                sh 'docker compose -f docker-compose.yml run backend npm run test'
             }
         }
 
         stage('Deploy Containers') {
             steps {
                 echo "🚀 Deploying containers..."
-                sh 'sudo docker-compose -f docker-compose.yml up -d'
+                sh 'docker compose -f docker-compose.yml up -d'
             }
         }
 
         stage('Cleanup') {
             steps {
                 echo "🧹 Cleaning up unused Docker resources..."
-                sh 'sudo docker system prune -f'
+                sh 'docker system prune -f'
             }
         }
     }
