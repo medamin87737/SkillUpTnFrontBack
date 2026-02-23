@@ -7,10 +7,6 @@ services:
     restart: always
     ports:
       - "27017:27017"
-    environment:
-      MONGO_INITDB_DATABASE: skillupdb
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
     volumes:
       - mongo-data:/data/db
 
@@ -21,7 +17,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      MONGODB_URI: mongodb://root:example@mongo:27017/skillupdb?authSource=admin
+      MONGODB_URI: mongodb://mongo:27017/skillupdb
     depends_on:
       - mongo
 
