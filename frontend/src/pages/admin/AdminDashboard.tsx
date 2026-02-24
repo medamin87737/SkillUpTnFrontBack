@@ -3,11 +3,13 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useData } from '../../context/DataContext'
 import StatCard from '../../components/shared/StatCard'
 import { departmentSkillStats, progressionData } from '../../data/mock-data'
+import { useI18n } from '../../hooks/useI18n'
 
 const COLORS = ['hsl(27, 92%, 54%)', 'hsl(222, 60%, 33%)', 'hsl(160, 60%, 45%)', 'hsl(43, 74%, 66%)', 'hsl(340, 75%, 55%)']
 
 export default function AdminDashboard() {
   const { users, departments, activities } = useData()
+  const t = useI18n()
 
   const roleDistribution = [
     { name: 'Employes', value: users.filter(u => u.role === 'EMPLOYEE').length },
@@ -19,8 +21,8 @@ export default function AdminDashboard() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard Administrateur</h1>
-        <p className="text-sm text-muted-foreground">Vue globale du systeme de recommandation</p>
+        <h1 className="text-2xl font-bold text-foreground">{t('dashboard.admin.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('dashboard.admin.subtitle')}</p>
       </div>
 
       {/* Stats */}

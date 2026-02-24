@@ -7,14 +7,23 @@ import type { Recommendation } from '../../types'
 export default function ManagerActivityDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { activities, getActivityRecommendations, updateRecommendation } = useData()
+  const { activities, getActivityRecommendations, updateRecommendation, sendNotification } = useData()
 
   const activity = activities.find(a => a.id === id)
   const recs = getActivityRecommendations(id ?? '')
 
   if (!activity) return <div className="p-8 text-center text-muted-foreground">Activite non trouvee</div>
 
-  const confirmRec = (rec: Recommendation) => updateRecommendation({ ...rec, status: 'confirmed' })
+  const confirmRec = (rec: Recommendation) => {
+    updateRecommendation({ ...rec, status: 'confirmed' })
+    sendNotification(
+      rec.employee_id,
+      activity.id,
+      'Participation confirmée',
+      `Votre participation à l'activité "${activity.title}" a été confirmée par le manager.`,
+      'participation_confirmed'
+    )
+  }
   const rejectRec = (rec: Recommendation) => updateRecommendation({ ...rec, status: 'rejected' })
 
   return (

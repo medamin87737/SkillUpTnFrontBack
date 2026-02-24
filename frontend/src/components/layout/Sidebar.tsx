@@ -96,7 +96,7 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
     <aside
       className={cn(
         'fixed left-0 top-0 z-40 flex h-screen flex-col bg-sidebar text-sidebar-foreground transition-all duration-300',
-        collapsed ? 'w-[72px]' : 'w-64'
+        collapsed ? 'w-[72px]' : 'w-[260px]'
       )}
     >
       {/* Logo */}

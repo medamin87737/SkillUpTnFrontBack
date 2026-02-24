@@ -4,10 +4,12 @@ import { useAuth } from '../../context/AuthContext'
 import StatCard from '../../components/shared/StatCard'
 import StatusBadge from '../../components/shared/StatusBadge'
 import { ClipboardList, Users, CheckCircle, Clock, ArrowRight } from 'lucide-react'
+import { useI18n } from '../../hooks/useI18n'
 
 export default function ManagerDashboard() {
   const { activities, recommendations, users, getUnreadCount } = useData()
   const { user } = useAuth()
+  const t = useI18n()
 
   const myActivities = activities.filter(a => a.assigned_manager === user?.id)
   const pendingValidations = myActivities.filter(a => a.status === 'in_progress' || a.status === 'open')
@@ -16,25 +18,25 @@ export default function ManagerDashboard() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard Manager</h1>
-        <p className="text-sm text-muted-foreground">Gerez votre equipe et validez les participations</p>
+        <h1 className="text-2xl font-bold text-foreground">{t('dashboard.manager.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('dashboard.manager.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Mes activites" value={myActivities.length} icon={<ClipboardList className="h-5 w-5" />} />
-        <StatCard title="Validations en attente" value={pendingValidations.length} icon={<Clock className="h-5 w-5" />} />
-        <StatCard title="Mon equipe" value={myTeam.length} icon={<Users className="h-5 w-5" />} />
-        <StatCard title="Notifications" value={user ? getUnreadCount(user.id) : 0} icon={<CheckCircle className="h-5 w-5" />} />
+        <StatCard title={t('dashboard.manager.card.myActivities')} value={myActivities.length} icon={<ClipboardList className="h-5 w-5" />} />
+        <StatCard title={t('dashboard.manager.card.pendingValidations')} value={pendingValidations.length} icon={<Clock className="h-5 w-5" />} />
+        <StatCard title={t('dashboard.manager.card.myTeam')} value={myTeam.length} icon={<Users className="h-5 w-5" />} />
+        <StatCard title={t('dashboard.manager.card.notifications')} value={user ? getUnreadCount(user.id) : 0} icon={<CheckCircle className="h-5 w-5" />} />
       </div>
 
       {/* Team members */}
       <div className="rounded-xl border border-border bg-card">
         <div className="border-b border-border px-5 py-4">
-          <h3 className="text-sm font-semibold text-card-foreground">Mon equipe</h3>
+          <h3 className="text-sm font-semibold text-card-foreground">{t('dashboard.manager.section.myTeam')}</h3>
         </div>
         <div className="divide-y divide-border">
           {myTeam.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-muted-foreground">Aucun membre dans l'equipe</p>
+            <p className="px-5 py-6 text-center text-sm text-muted-foreground">{t('dashboard.manager.section.noTeam')}</p>
           ) : (
             myTeam.map(member => (
               <div key={member.id} className="flex items-center justify-between px-5 py-3">
@@ -60,14 +62,14 @@ export default function ManagerDashboard() {
       {/* Activities assigned to me */}
       <div className="rounded-xl border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h3 className="text-sm font-semibold text-card-foreground">Activites assignees</h3>
+          <h3 className="text-sm font-semibold text-card-foreground">{t('dashboard.manager.section.assignedActivities')}</h3>
           <Link to="/manager/activities" className="flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-            Voir tout <ArrowRight className="h-3 w-3" />
+            {t('dashboard.manager.section.viewAll')} <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
         <div className="divide-y divide-border">
           {myActivities.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-muted-foreground">Aucune activite assignee</p>
+            <p className="px-5 py-6 text-center text-sm text-muted-foreground">{t('dashboard.manager.section.noAssignedActivities')}</p>
           ) : (
             myActivities.map(a => (
               <div key={a.id} className="flex items-center justify-between px-5 py-3">

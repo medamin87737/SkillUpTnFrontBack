@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
-import type { User, Department, Activity, Recommendation, Notification, QuestionCompetence, UserStatus } from '../types'
+import type { User, Department, Activity, Recommendation, Notification, QuestionCompetence, UserStatus, NotificationType } from '../types'
 import { useAuth } from './AuthContext'
 import { recommendations as mockRecommendations, notifications as mockNotifications } from '../data/mock-data'
 
@@ -32,6 +32,7 @@ interface DataContextType {
     createdCount: number
     errorCount: number
   }>
+  sendNotification: (userId: string, activityId: string | undefined, title: string, message: string, type: NotificationType) => void
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined)
@@ -317,6 +318,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return recommendations.filter(r => r.activity_id === activityId)
   }, [recommendations])
 
+  const sendNotification = useCallback((userId: string, activityId: string | undefined, title: string, message: string, type: NotificationType) => {
+    const now = new Date().toISOString()
+    const notif: Notification = {
+      id: crypto.randomUUID(),
+      user_id: userId,
+      title,
+      message,
+      type,
+      read: false,
+      activity_id: activityId,
+      created_at: now,
+    }
+    setNotifications(prev => [notif, ...prev])
+  }, [])
+
   return (
     <DataContext.Provider value={{
       users, departments, activities, recommendations, notifications, questionCompetences,
@@ -330,6 +346,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       getActivityRecommendations,
       getDepartmentName: () => 'N/A',
       importUsersFromCsv,
+      sendNotification,
     }}>
       {children}
     </DataContext.Provider>

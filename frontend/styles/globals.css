@@ -92,3 +92,9 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Override Tailwind base font size to enlarge toute l'app */
+html {
+  font-size: 18px;
+  line-height: 1.6;
+}

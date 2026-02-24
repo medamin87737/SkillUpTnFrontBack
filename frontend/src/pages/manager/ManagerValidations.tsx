@@ -5,14 +5,26 @@ import { Check, X, Target, TrendingUp } from 'lucide-react'
 import type { Recommendation } from '../../types'
 
 export default function ManagerValidations() {
-  const { activities, recommendations, updateRecommendation } = useData()
+  const { activities, recommendations, updateRecommendation, sendNotification } = useData()
   const { user } = useAuth()
 
   const myActivities = activities.filter(a => a.assigned_manager === user?.id)
   const myRecs = recommendations.filter(r => myActivities.some(a => a.id === r.activity_id))
   const pendingRecs = myRecs.filter(r => r.status === 'recommended')
 
-  const confirmRec = (rec: Recommendation) => updateRecommendation({ ...rec, status: 'confirmed' })
+  const confirmRec = (rec: Recommendation) => {
+    updateRecommendation({ ...rec, status: 'confirmed' })
+    const activity = activities.find(a => a.id === rec.activity_id)
+    sendNotification(
+      rec.employee_id,
+      activity?.id,
+      'Participation confirmée',
+      activity
+        ? `Votre participation à l'activité "${activity.title}" a été confirmée par le manager.`
+        : 'Votre participation a été confirmée par le manager.',
+      'participation_confirmed'
+    )
+  }
   const rejectRec = (rec: Recommendation) => updateRecommendation({ ...rec, status: 'rejected' })
 
   return (

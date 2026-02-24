@@ -19,7 +19,7 @@ interface AccessibilityContextType {
 const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined)
 
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
-  const [zoom, setZoomState] = useState<ZoomLevel>('normal')
+  const [zoom, setZoomState] = useState<ZoomLevel>('xlarge')
   const [language, setLanguageState] = useState<Language>('fr')
   const [autoReadSelection, setAutoReadSelectionState] = useState(false)
   const [voiceCommandsActive, setVoiceCommandsActive] = useState(false)

@@ -10,8 +10,9 @@ export default function DashboardLayout() {
     <div className="flex min-h-screen bg-background">
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
       <div
-        className="flex flex-1 flex-col transition-all duration-300"
-        style={{ marginLeft: collapsed ? '72px' : '256px' }}
+        className={`flex flex-1 flex-col transition-all duration-300 ${
+          collapsed ? 'ml-[5rem]' : 'ml-[260px]'
+        }`}
       >
         <Header />
         <main className="flex-1 p-6">
