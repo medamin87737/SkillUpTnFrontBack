@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import type { User, Department, Activity, Recommendation, Notification, QuestionCompetence, UserStatus } from '../types'
 import { useAuth } from './AuthContext'
+import { recommendations as mockRecommendations, notifications as mockNotifications } from '../data/mock-data'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
 
@@ -26,6 +27,11 @@ interface DataContextType {
   getUserNotifications: (userId: string) => Notification[]
   getActivityRecommendations: (activityId: string) => Recommendation[]
   getDepartmentName: (id: string) => string
+  importUsersFromCsv: (file: File) => Promise<{
+    message: string
+    createdCount: number
+    errorCount: number
+  }>
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined)
@@ -92,6 +98,7 @@ function mapBackendActivityToUi(a: any): Activity {
     })),
     seats: a?.maxParticipants ?? 0,
     date: a?.startDate ? new Date(a.startDate).toISOString() : new Date().toISOString(),
+    end_date: a?.endDate ? new Date(a.endDate).toISOString() : undefined,
     duration: a?.duration ?? 'N/A',
     location: a?.location ?? 'N/A',
     priority: a?.priority ?? 'consolidate_medium',
@@ -107,8 +114,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>([])
   const [departments, setDepartments] = useState<Department[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([])
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [recommendations, setRecommendations] = useState<Recommendation[]>(mockRecommendations)
+  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications)
   const [questionCompetences] = useState<QuestionCompetence[]>([])
   const { user } = useAuth()
 
@@ -187,6 +194,41 @@ export function DataProvider({ children }: { children: ReactNode }) {
     })()
   }, [])
 
+  const importUsersFromCsv = useCallback(async (file: File) => {
+    const token = sessionStorage.getItem('auth_token')
+    if (!token) {
+      throw new Error('Utilisateur non authentifié')
+    }
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const res = await fetch(`${API_BASE_URL}/users/import-csv`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    })
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text || "Erreur lors de l'import CSV")
+    }
+
+    const payload = await res.json()
+    const created = Array.isArray(payload.created) ? payload.created : []
+    const mapped = created.map(mapBackendUserToUi)
+
+    setUsers(prev => [...mapped, ...prev])
+
+    return {
+      message: payload.message ?? `Import terminé: ${mapped.length} utilisateurs créés`,
+      createdCount: payload.createdCount ?? mapped.length,
+      errorCount: payload.errorCount ?? (Array.isArray(payload.errors) ? payload.errors.length : 0),
+    }
+  }, [])
+
   const updateUser = useCallback((u: User) => {
     const token = sessionStorage.getItem('auth_token')
     if (!token) return
@@ -253,18 +295,41 @@ export function DataProvider({ children }: { children: ReactNode }) {
     })()
   }, [])
 
+  const updateRecommendation = useCallback((rec: Recommendation) => {
+    setRecommendations(prev => prev.map(r => (r.id === rec.id ? rec : r)))
+  }, [])
+
+  const markNotificationRead = useCallback((id: string) => {
+    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)))
+  }, [])
+
+  const getUnreadCount = useCallback((userId: string) => {
+    return notifications.filter(n => n.user_id === userId && !n.read).length
+  }, [notifications])
+
+  const getUserNotifications = useCallback((userId: string) => {
+    return notifications
+      .filter(n => n.user_id === userId)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }, [notifications])
+
+  const getActivityRecommendations = useCallback((activityId: string) => {
+    return recommendations.filter(r => r.activity_id === activityId)
+  }, [recommendations])
+
   return (
     <DataContext.Provider value={{
       users, departments, activities, recommendations, notifications, questionCompetences,
       addUser, updateUser, deleteUser,
       addDepartment: () => {}, updateDepartment: () => {}, deleteDepartment: () => {},
       addActivity, updateActivity, deleteActivity,
-      updateRecommendation: () => {},
-      markNotificationRead: () => {},
-      getUnreadCount: () => 0,
-      getUserNotifications: () => [],
-      getActivityRecommendations: () => [],
+      updateRecommendation,
+      markNotificationRead,
+      getUnreadCount,
+      getUserNotifications,
+      getActivityRecommendations,
       getDepartmentName: () => 'N/A',
+      importUsersFromCsv,
     }}>
       {children}
     </DataContext.Provider>

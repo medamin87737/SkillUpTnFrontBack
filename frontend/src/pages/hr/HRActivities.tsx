@@ -17,6 +17,14 @@ export default function HRActivities() {
   const [editing, setEditing] = useState<Activity | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
+  const [editType, setEditType] = useState<Activity['type']>('training')
+  const [editSeats, setEditSeats] = useState<number>(0)
+  const [editDate, setEditDate] = useState('')
+  const [editEndDate, setEditEndDate] = useState('')
+  const [editPriority, setEditPriority] = useState<Activity['priority']>('consolidate_medium')
+  const [editStatusValue, setEditStatusValue] = useState<Activity['status']>('draft')
+  const [editLocation, setEditLocation] = useState('')
+  const [editDuration, setEditDuration] = useState('')
   const [editLoading, setEditLoading] = useState(false)
 
   // Delete state
@@ -28,6 +36,31 @@ export default function HRActivities() {
     setEditing(a)
     setEditTitle(a.title)
     setEditDescription(a.description)
+    setEditType(a.type)
+    setEditSeats(a.seats)
+    // Convert ISO date to datetime-local string (YYYY-MM-DDTHH:MM)
+    try {
+      const d = new Date(a.date)
+      const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+      setEditDate(local.toISOString().slice(0, 16))
+    } catch {
+      setEditDate('')
+    }
+    if (a.end_date) {
+      try {
+        const dEnd = new Date(a.end_date)
+        const localEnd = new Date(dEnd.getTime() - dEnd.getTimezoneOffset() * 60000)
+        setEditEndDate(localEnd.toISOString().slice(0, 16))
+      } catch {
+        setEditEndDate('')
+      }
+    } else {
+      setEditEndDate('')
+    }
+    setEditPriority(a.priority)
+    setEditStatusValue(a.status)
+    setEditLocation(a.location)
+    setEditDuration(a.duration)
   }
 
   const openDelete = (id: string) => {
@@ -40,16 +73,46 @@ export default function HRActivities() {
     if (!editing) return
     setEditLoading(true)
     try {
+      const payload: any = {
+        title: editTitle,
+        description: editDescription,
+        type: editType,
+        maxParticipants: editSeats,
+        priority: editPriority,
+        status: editStatusValue,
+        location: editLocation,
+        duration: editDuration,
+      }
+
+      if (editDate) {
+        payload.startDate = new Date(editDate).toISOString()
+      }
+      if (editEndDate) {
+        payload.endDate = new Date(editEndDate).toISOString()
+      }
+
       const res = await fetch(`http://localhost:3000/activities/${editing.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: editTitle, description: editDescription }),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.message || 'Erreur lors de la modification')
       }
-      updateActivity({ ...editing, title: editTitle, description: editDescription })
+      updateActivity({
+        ...editing,
+        title: editTitle,
+        description: editDescription,
+        type: editType,
+        seats: editSeats,
+        date: editDate ? new Date(editDate).toISOString() : editing.date,
+        end_date: editEndDate ? new Date(editEndDate).toISOString() : editing.end_date,
+        priority: editPriority,
+        status: editStatusValue,
+        location: editLocation,
+        duration: editDuration,
+      })
       toast({ title: 'Activité mise à jour', description: 'Les informations ont été enregistrées.' })
       setEditing(null)
     } catch (err: any) {
@@ -203,7 +266,7 @@ export default function HRActivities() {
             </button>
           </div>
           <form onSubmit={handleEditSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 md:col-span-2">
               <label className="text-sm font-medium">Titre</label>
               <input
                 value={editTitle}
@@ -212,13 +275,107 @@ export default function HRActivities() {
                 required
               />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 md:col-span-2">
               <label className="text-sm font-medium">Description</label>
               <textarea
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 className="min-h-[80px] rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Type</label>
+              <select
+                value={editType}
+                onChange={(e) => setEditType(e.target.value as Activity['type'])}
+                className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="training">Formation</option>
+                <option value="certification">Certification</option>
+                <option value="project">Projet</option>
+                <option value="mission">Mission</option>
+                <option value="audit">Audit</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Nombre de places</label>
+              <input
+                type="number"
+                min={1}
+                value={editSeats}
+                onChange={(e) => setEditSeats(Number(e.target.value) || 0)}
+                className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Date de début</label>
+              <input
+                type="datetime-local"
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+                className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Date de fin</label>
+              <input
+                type="datetime-local"
+                value={editEndDate}
+                onChange={(e) => setEditEndDate(e.target.value)}
+                className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Priorité</label>
+              <select
+                value={editPriority}
+                onChange={(e) => setEditPriority(e.target.value as Activity['priority'])}
+                className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="develop_low">Développer (faible)</option>
+                <option value="consolidate_medium">Consolider (moyen)</option>
+                <option value="exploit_expert">Exploiter (expert)</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Statut</label>
+              <select
+                value={editStatusValue}
+                onChange={(e) => setEditStatusValue(e.target.value as Activity['status'])}
+                className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="draft">Brouillon</option>
+                <option value="open">Ouvert</option>
+                <option value="in_progress">En cours</option>
+                <option value="completed">Terminé</option>
+                <option value="cancelled">Annulé</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Lieu</label>
+              <input
+                value={editLocation}
+                onChange={(e) => setEditLocation(e.target.value)}
+                className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="Ex: Salle de formation, En ligne..."
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Durée</label>
+              <input
+                value={editDuration}
+                onChange={(e) => setEditDuration(e.target.value)}
+                className="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="Ex: 2 jours, 3h, 1 semaine..."
               />
             </div>
             <div className="flex justify-end gap-2">

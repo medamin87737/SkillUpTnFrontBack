@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsArray, IsDate, ValidateNested, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsArray, ValidateNested, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class RequiredSkillDto {
@@ -37,12 +37,26 @@ export class UpdateActivityDto {
   maxParticipants?: number;
 
   @IsOptional()
-  @IsDate()
-  @Type(() => Date)
-  startDate?: Date;
+  @IsString()
+  startDate?: string;
 
   @IsOptional()
-  @IsDate()
-  @Type(() => Date)
-  endDate?: Date;
+  @IsString()
+  endDate?: string;
+
+  @IsOptional()
+  @IsString()
+  priority?: string;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsString()
+  duration?: string;
 }

@@ -85,6 +85,8 @@ export interface Activity {
   required_skills: RequiredSkill[]
   seats: number
   date: string
+  // Optionnel côté front, mappé à endDate côté backend si disponible
+  end_date?: string
   duration: string
   location: string
   priority: PriorityContext

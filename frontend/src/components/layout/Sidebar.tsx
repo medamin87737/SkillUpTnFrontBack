@@ -28,6 +28,7 @@ const roleNavItems: Record<string, NavItem[]> = {
     { label: 'Dashboard', path: '/hr/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
     { label: 'Activites', path: '/hr/activities', icon: <ClipboardList className="h-5 w-5" /> },
     { label: 'Creer Activite', path: '/hr/create-activity', icon: <FolderOpen className="h-5 w-5" /> },
+    { label: 'Import CSV Employes', path: '/hr/import-employees', icon: <Users className="h-5 w-5" /> },
     { label: 'Historique', path: '/hr/history', icon: <History className="h-5 w-5" /> },
     { label: 'Analytiques', path: '/hr/analytics', icon: <BarChart3 className="h-5 w-5" /> },
   ],
