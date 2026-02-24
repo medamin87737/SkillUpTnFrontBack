@@ -17,14 +17,22 @@ async function bootstrap() {
     console.log('🌱 Démarrage du seed des utilisateurs...\n');
 
     // 1. Créer des départements si nécessaire
-    console.log('📁 Création des départements...');
+   /* console.log('📁 Création des départements...');
     const departments = [
       { name: 'IT', description: 'Département Technologies de l\'Information' },
       { name: 'RH', description: 'Ressources Humaines' },
       { name: 'Finance', description: 'Département Financier' },
       { name: 'Marketing', description: 'Département Marketing' },
       { name: 'Operations', description: 'Département Opérations' },
-    ];
+    ];*/
+
+    const departments = [
+  { name: 'IT', code: 'IT', description: 'Département Technologies de l\'Information' },
+  { name: 'RH', code: 'RH', description: 'Ressources Humaines' },
+  { name: 'Finance', code: 'FIN', description: 'Département Financier' },
+  { name: 'Marketing', code: 'MKT', description: 'Département Marketing' },
+  { name: 'Operations', code: 'OPS', description: 'Département Opérations' },
+];
 
     const createdDepartments: any[] = [];
     for (const dept of departments) {
