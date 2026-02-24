@@ -94,4 +94,35 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Animations spécifiques au hero du login (cercles dynamiques) */
+  @keyframes float-to-center-left {
+    0% {
+      transform: translate(0, 0) scale(1);
+    }
+    100% {
+      transform: translate(220px, 200px) scale(1.15);
+    }
+  }
+
+  @keyframes float-to-center-right {
+    0% {
+      transform: translate(0, 0) scale(1);
+    }
+    100% {
+      transform: translate(-220px, -200px) scale(1.15);
+    }
+  }
+
+  .hero-circle-left {
+    animation: float-to-center-left 3s ease-in-out infinite alternate;
+  }
+
+  .hero-circle-right {
+    animation: float-to-center-right 3s ease-in-out infinite alternate;
+  }
+
+  .hero-circle-soft {
+    animation: pulse 4s ease-in-out infinite;
+  }
 }

@@ -98,3 +98,123 @@ html {
   font-size: 18px;
   line-height: 1.6;
 }
+
+/* Animations globales pour rendre l'interface plus dynamique */
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes subtle-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes float-slow {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes float-diagonal {
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(14px, -12px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes float-horizontal {
+  0% {
+    transform: translateX(-8px);
+  }
+  50% {
+    transform: translateX(10px);
+  }
+  100% {
+    transform: translateX(-8px);
+  }
+}
+
+@keyframes float-to-center-left {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    /* va nettement vers le centre depuis le haut gauche */
+    transform: translate(220px, 200px) scale(1.15);
+  }
+}
+
+@keyframes float-to-center-right {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    /* va nettement vers le centre depuis le bas droite */
+    transform: translate(-220px, -200px) scale(1.15);
+  }
+}
+
+@layer utilities {
+  .animate-page-enter {
+    animation: fade-in-up 0.45s ease-out both;
+  }
+
+  .card-animated {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  .nav-item-animated {
+    @apply transition-all duration-200;
+  }
+
+  .nav-item-animated:hover {
+    transform: translateX(4px);
+  }
+
+  .badge-pulse {
+    animation: subtle-pulse 1.4s ease-in-out infinite;
+  }
+
+  /* Animations spécifiques au hero du login (site d'assurance) */
+  .hero-circle-main {
+    animation: float-slow 7s ease-in-out infinite;
+  }
+
+  .hero-circle-secondary {
+    animation: float-diagonal 11s ease-in-out infinite;
+  }
+
+  .hero-circle-soft {
+    animation: subtle-pulse 6s ease-in-out infinite;
+  }
+
+  .hero-circle-left {
+    animation: float-to-center-left 3s ease-in-out infinite alternate;
+  }
+
+  .hero-circle-right {
+    animation: float-to-center-right 3s ease-in-out infinite alternate;
+  }
+}

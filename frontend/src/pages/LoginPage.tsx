@@ -34,16 +34,20 @@ export default function LoginPage() {
 
     setLoading(true)
     const success = await login(email, password)
-    setLoading(false)
 
     if (success) {
-      const finalUser = user ?? JSON.parse(sessionStorage.getItem('auth_user') || '{}')
-      if (finalUser && finalUser.role) {
-        navigate(roleRoutes[finalUser.role as UserRole] || '/login')
-      } else {
-        setError(t('errorRole'))
-      }
+      // petit écran de chargement pour donner une impression de transition
+      setTimeout(() => {
+        setLoading(false)
+        const finalUser = user ?? JSON.parse(sessionStorage.getItem('auth_user') || '{}')
+        if (finalUser && finalUser.role) {
+          navigate(roleRoutes[finalUser.role as UserRole] || '/login')
+        } else {
+          setError(t('errorRole'))
+        }
+      }, 1000)
     } else {
+      setLoading(false)
       setError(t('errorLogin'))
     }
   }
@@ -89,13 +93,18 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen">
-      {/* Left - Branding / Hero */}
+      {/* Left - Branding / Hero (assurance) */}
       <div className="relative hidden flex-1 items-center justify-center bg-[#0B3B8A] px-12 py-16 text-white lg:flex overflow-hidden">
-        {/* Background circles */}
+        {/* Cercles de fond animés pour un effet \"assurance\" rassurant */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-24 -top-24 h-80 w-80 rounded-full bg-white/5" />
-          <div className="absolute left-1/2 top-1/4 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-white/8" />
-          <div className="absolute -bottom-32 right-[-80px] h-80 w-80 rounded-full bg-white/4" />
+          {/* Cercle bleu : part de l'extrémité haut gauche et se rapproche du centre */}
+          <div className="absolute -left-40 -top-40 h-80 w-80 rounded-full bg-white/10 blur-[1px] hero-circle-left" />
+
+          {/* Cercle orange : part de l'extrémité bas droite et se rapproche du centre */}
+          <div className="absolute -right-40 -bottom-40 h-80 w-80 rounded-full bg-[#FF7A1A] opacity-25 blur-[1px] hero-circle-right" />
+
+          {/* léger halo doux au centre pour lier les deux */}
+          <div className="absolute left-1/2 top-1/3 h-[360px] w-[360px] -translate-x-1/2 rounded-full bg-white/8 hero-circle-soft" />
         </div>
 
         <div className="relative z-10 max-w-xl">

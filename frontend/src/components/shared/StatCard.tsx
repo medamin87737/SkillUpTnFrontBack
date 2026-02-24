@@ -10,7 +10,7 @@ interface StatCardProps {
 
 export default function StatCard({ title, value, icon, trend, className }: StatCardProps) {
   return (
-    <div className={cn('rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-md', className)}>
+    <div className={cn('rounded-xl border border-border bg-card p-5 card-animated', className)}>
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-1">
           <span className="text-sm font-medium text-muted-foreground">{title}</span>
