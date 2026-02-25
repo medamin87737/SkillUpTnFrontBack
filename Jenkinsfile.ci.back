@@ -42,7 +42,15 @@ pipeline {
         stage('Run Backend Tests') {
             steps {
                 echo "🧪 Lancement des tests backend dans le conteneur..."
-                sh 'docker-compose run --rm backend npm run test'
+                script {
+                    // Évite les conflits de nom de conteneur si un ancien Mongo / backend existe déjà
+                    sh 'docker stop skillup-mongo || true'
+                    sh 'docker rm skillup-mongo || true'
+                    sh 'docker stop skillup-backend || true'
+                    sh 'docker rm skillup-backend || true'
+
+                    sh 'docker-compose run --rm backend npm run test'
+                }
             }
         }
     }
