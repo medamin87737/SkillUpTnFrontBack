@@ -25,8 +25,13 @@ pipeline {
         stage('Deploy Frontend Container') {
             steps {
                 echo "🚀 Déploiement du conteneur frontend..."
-                // --no-deps pour ne pas toucher au backend/mongo
-                sh 'docker-compose up -d --no-deps --force-recreate frontend'
+                script {
+                    // On s'assure d'abord que l'ancien conteneur est arrêté / supprimé
+                    sh 'docker stop skillup-frontend || true'
+                    sh 'docker rm skillup-frontend || true'
+                    // --no-deps pour ne pas toucher au backend/mongo
+                    sh 'docker-compose up -d --no-deps --force-recreate frontend'
+                }
             }
         }
     }
