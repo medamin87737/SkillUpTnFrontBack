@@ -1,0 +1,40 @@
+pipeline {
+    agent any
+
+    options {
+        skipDefaultCheckout(true)
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo "🔄 CD BACK – Checkout du repository..."
+                deleteDir()
+                git branch: 'main', url: 'https://github.com/medamin87737/SkillUpTnFrontBack.git'
+            }
+        }
+
+        stage('Build Docker Image (Backend)') {
+            steps {
+                echo "🛠 Build de l'image Docker du backend (CD)..."
+                sh 'docker-compose build backend'
+            }
+        }
+
+        stage('Deploy Backend + Mongo') {
+            steps {
+                echo "🚀 Déploiement du backend (et démarrage de Mongo si besoin)..."
+                // On s'assure que Mongo est lancé puis on (re)déploie le backend
+                sh 'docker-compose up -d mongo'
+                sh 'docker-compose up -d --force-recreate backend'
+            }
+        }
+    }
+
+    post {
+        success { echo "✅ CD BACK déployé avec succès" }
+        failure { echo "❌ CD BACK échoué" }
+    }
+}
+

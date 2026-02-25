@@ -16,8 +16,8 @@ Le projet est découpé en :
 - `backend/` : API NestJS qui parle à MongoDB.
 - `frontend/` : application React + Vite + Tailwind.
 - `docker-compose.yml` (racine) : stack **MongoDB + backend + frontend** en Docker.
-- `Jenkinsfile` : pipeline **CI/CD** pour construire, tester et déployer la stack Docker.
-- `k8s/` (optionnel) : manifests Kubernetes pour déployer l’app dans **Minikube**.
+- `Jenkinsfile.ci.front`, `Jenkinsfile.cd.front`, `Jenkinsfile.ci.back`, `Jenkinsfile.cd.back` : 4 pipelines **CI/CD** séparés pour le frontend et le backend.
+- (optionnel) un dossier `k8s/` pourra contenir des manifests Kubernetes si on choisit de déployer dans **Minikube** / Kubernetes.
 - Stack de monitoring : **SonarQube**, **Prometheus**, **Grafana** tournent dans des conteneurs/K8s.
 
 Relations principales :
@@ -59,20 +59,32 @@ Toutes les commandes ci‑dessous sont à exécuter dans **WSL (Ubuntu)**, sauf 
     - `mongo` : MongoDB (image `mongo:6.0`, port `27017`).
     - `backend` : API NestJS (`skilluptn-ci-cd-backend`, port `3000:3000`).
     - `frontend` : frontend React/Vite (`skilluptn-ci-cd-frontend`, port `80:80`).
-  - Sert pour **les développeurs** et pour le déploiement dans le pipeline Jenkins.
+  - Sert pour **les développeurs** et pour le déploiement dans les pipelines Jenkins.
 
-- `Dockerfile` (racine)  
-  - Optionnel, peut être utilisé pour empaqueter le projet complet.  
-  - Le pipeline Jenkins utilise plutôt les Dockerfiles de `backend/` et `frontend/`.
+- `Jenkinsfile.ci.front`  
+  - Pipeline **CI** du frontend :
+    - Checkout du repo.
+    - Analyse SonarQube sur le dossier `frontend`.
+    - Build de l’image Docker du frontend (`docker-compose build frontend`).
 
-- `Jenkinsfile`  
-  - Définit le pipeline CI/CD (stages) exécuté par Jenkins :
-    - `Checkout` : clone le repo GitHub.
-    - `Build Docker Images` : `docker-compose build` (backend + frontend).
-    - `Cleanup Before Deploy` : `docker-compose down -v` (nettoyage ancien déploiement).
-    - `Run Backend Tests` : `docker-compose run backend npm run test` (Jest).
-    - `Deploy Containers` : `docker-compose up -d --force-recreate`.
-    - `Final Cleanup` : `docker system prune -f` (nettoyage images/volumes inutilisés).
+- `Jenkinsfile.cd.front`  
+  - Pipeline **CD** du frontend :
+    - Checkout du repo.
+    - Build de l’image Docker du frontend.
+    - Déploiement du conteneur frontend uniquement (`docker-compose up -d --no-deps --force-recreate frontend`).
+
+- `Jenkinsfile.ci.back`  
+  - Pipeline **CI** du backend :
+    - Checkout du repo.
+    - Analyse SonarQube sur le dossier `backend`.
+    - Build de l’image Docker du backend (`docker-compose build backend`).
+    - Lancement des tests backend (`docker-compose run --rm backend npm run test`).
+
+- `Jenkinsfile.cd.back`  
+  - Pipeline **CD** du backend :
+    - Checkout du repo.
+    - Build de l’image Docker du backend.
+    - Démarrage de Mongo + (re)déploiement du backend (`docker-compose up -d mongo` puis `docker-compose up -d --force-recreate backend`).
 
 - `DEVOPS.md` (ce fichier)  
   - Documentation détaillée de la chaîne DevOps.
@@ -85,9 +97,6 @@ Toutes les commandes ci‑dessous sont à exécuter dans **WSL (Ubuntu)**, sauf 
     - `npm install`.
     - `npm run build` (Nest build vers `dist/`).
     - Commande finale : `node dist/main` (port 3000).
-
-- `backend/docker-compose.yml`  
-  - Fichier de service local Mongo + backend (optionnel, la racine est préférée).
 
 - `backend/package.json`  
   - Scripts clés :
@@ -102,17 +111,14 @@ Toutes les commandes ci‑dessous sont à exécuter dans **WSL (Ubuntu)**, sauf 
     - Stage `build` : `npm install` + `npm run build` (Vite → `dist/`).
     - Stage `nginx` : copie `dist/` dans l’image `nginx:alpine` (port 80).
 
-- `frontend/docker-compose.yml`  
-  - Optionnel, pour lancer le frontend avec Mongo/backend si nécessaire.
-
 ### 3.4. Kubernetes (`k8s/`)
 
-> Ces manifests peuvent être présents ou à recréer. Ils illustrent comment déployer dans Minikube.
-
-- `k8s/namespace.yaml` : crée le namespace `skilluptn`.
-- `k8s/mongo.yaml` : `Deployment` + `Service` Mongo dans `skilluptn`.
-- `k8s/backend.yaml` : `Deployment` + `Service` backend (image `skilluptn-ci-cd-backend`).
-- `k8s/frontend.yaml` : `Deployment` + `Service` frontend (image `skilluptn-ci-cd-frontend`, NodePort pour accès externe).
+> Les manifests Kubernetes **ne sont pas versionnés** dans la version actuelle du projet.  
+> On pourra, si besoin, ajouter un dossier `k8s/` contenant des manifests pour :
+> - un namespace (ex : `skilluptn`) ;
+> - MongoDB (Deployment + Service) ;
+> - backend (Deployment + Service) ;
+> - frontend (Deployment + Service avec NodePort ou Ingress).
 
 ---
 
@@ -132,7 +138,7 @@ Dans WSL :
 
 ```bash
 cd /mnt/c/Users/amin/Desktop/FrontBackPi/SkillUpTN
-docker-compose build
+docker compose build
 ```
 
 Cela appelle :
@@ -144,7 +150,7 @@ Cela appelle :
 
 ```bash
 cd /mnt/c/Users/amin/Desktop/FrontBackPi/SkillUpTN
-docker-compose up -d
+docker compose up -d
 docker ps
 ```
 
@@ -158,12 +164,12 @@ Ports utilisés :
 
 ```bash
 cd /mnt/c/Users/amin/Desktop/FrontBackPi/SkillUpTN
-docker-compose down
+docker compose down
 ```
 
 ---
 
-## 5. Jenkins – CI/CD (pipeline unique)
+## 5. Jenkins – CI/CD (4 pipelines séparés)
 
 ### 5.1. Pourquoi Jenkins ?
 
@@ -202,60 +208,54 @@ Accès : `http://localhost:8080`
 3. Créer un utilisateur admin Jenkins.
 4. Installer les plugins suggérés.
 
-### 5.4. Créer le job pipeline `SkillUpTN-CI-CD`
+### 5.4. Créer les 4 jobs pipeline
 
-1. Sur la page d’accueil Jenkins → **New Item** → **Pipeline**.
-2. Nom : `SkillUpTN-CI-CD`.
-3. Section **Pipeline** :
-   - Definition : **Pipeline script from SCM**.
-   - SCM : **Git**.
+Dans Jenkins, on crée **4 items (jobs)** de type **Pipeline** :
+
+1. **CI-FRONT**  
+   - New Item → nom : `CI-FRONT` → Pipeline.  
+   - Pipeline script from SCM.  
+   - SCM : Git.  
    - Repository URL :  
-     `https://github.com/medamin87737/SkillUpTnFrontBack.git`
-   - Branches : `*/main`.
-   - Script Path : `Jenkinsfile`.
+     `https://github.com/medamin87737/SkillUpTnFrontBack.git`  
+   - Branches : `*/main`.  
+   - Script Path : `Jenkinsfile.ci.front`.
 
-### 5.5. Détail du pipeline (Jenkinsfile)
+2. **CD-FRONT**  
+   - New Item → nom : `CD-FRONT` → Pipeline.  
+   - Même config SCM que ci‑dessus.  
+   - Script Path : `Jenkinsfile.cd.front`.
 
-Le `Jenkinsfile` décrit les étapes DevOps :
+3. **CI-BACK**  
+   - New Item → nom : `CI-BACK` → Pipeline.  
+   - Même config SCM.  
+   - Script Path : `Jenkinsfile.ci.back`.
 
-1. **stage `Checkout`**
-   - Efface le workspace (`deleteDir()`).
-   - Clone la branche `main` depuis GitHub.
+4. **CD-BACK**  
+   - New Item → nom : `CD-BACK` → Pipeline.  
+   - Même config SCM.  
+   - Script Path : `Jenkinsfile.cd.back`.
 
-2. **stage `Build Docker Images`**
-   - Commande : `docker-compose build`
-   - Raison : construire les images backend/frontend avec les derniers changements.
+### 5.5. Rôle de chaque Jenkinsfile
 
-3. **stage `Cleanup Before Deploy`**
-   - Commande : `docker-compose down -v || true`
-   - Raison : arrêter et supprimer les anciens conteneurs + volumes, pour repartir proprement.
+- **`Jenkinsfile.ci.front`**  
+  - CI du frontend uniquement : analyse SonarQube + build de l’image Docker du frontend.
 
-4. **stage `Run Backend Tests`**
-   - Commande : `docker-compose run backend npm run test`
-   - Raison : lancer les tests Jest sur l’API NestJS dans un conteneur propre.
+- **`Jenkinsfile.cd.front`**  
+  - CD du frontend : rebuild de l’image + redéploiement du conteneur frontend sans toucher au backend ni à Mongo.
 
-5. **stage `Deploy Containers`**
-   - Commande : `docker-compose up -d --force-recreate`
-   - Raison : démarrer les conteneurs Mongo + backend + frontend avec les nouvelles images.
+- **`Jenkinsfile.ci.back`**  
+  - CI du backend : analyse SonarQube + build de l’image + exécution des tests Jest dans un conteneur.
 
-6. **stage `Final Cleanup`**
-   - Commande : `docker system prune -f || true`
-   - Raison : nettoyer les images/volumes inutilisés pour limiter l’espace disque.
+- **`Jenkinsfile.cd.back`**  
+  - CD du backend : rebuild de l’image + démarrage de Mongo (si besoin) + redéploiement du conteneur backend.
 
-Post‑actions :
+### 5.6. Lancer les pipelines
 
-- `success` : log `✅ Pipeline terminé avec succès`.
-- `failure` : log `❌ Pipeline échoué`.
-
-### 5.6. Lancer le pipeline
-
-Dans Jenkins, sur le job `SkillUpTN-CI-CD` :
+Dans Jenkins, sur chaque job (`CI-FRONT`, `CD-FRONT`, `CI-BACK`, `CD-BACK`) :
 
 1. Cliquer sur **Build Now**.
-2. Ouvrir la **Console Output** pour suivre :
-   - `docker-compose build`,
-   - tests Jest,
-   - `docker-compose up`.
+2. Ouvrir la **Console Output** pour suivre les étapes du pipeline (checkout, analyse SonarQube, build Docker, tests éventuels, déploiement).
 
 ---
 
@@ -301,7 +301,7 @@ Accès : `http://localhost:9000`
    - Token : on crée un credential “Secret text” avec le token Sonar.
 3. Dans **Global Tool Configuration → SonarQube Scanner** :
    - On configure un scanner nommé `SonarScanner`.
-4. Le `Jenkinsfile` peut contenir un stage `SonarQube Analysis` qui :
+4. Les Jenkinsfiles de **CI** peuvent contenir un stage `SonarQube Analysis` qui :
    - Utilise `withSonarQubeEnv('SonarQube')` pour se connecter.
    - Appelle `sonar-scanner` sur les dossiers `backend` et `frontend`.
 
@@ -446,10 +446,10 @@ Dans Grafana :
 cd /mnt/c/Users/amin/Desktop/FrontBackPi/SkillUpTN
 
 # Start
-docker-compose up -d
+docker compose up -d
 
 # Stop
-docker-compose down
+docker compose down
 ```
 
 ### 9.2. Jenkins & SonarQube

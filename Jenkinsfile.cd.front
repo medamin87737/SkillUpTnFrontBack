@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+
+    options {
+        skipDefaultCheckout(true)
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo "🔄 CD FRONT – Checkout du repository..."
+                deleteDir()
+                git branch: 'main', url: 'https://github.com/medamin87737/SkillUpTnFrontBack.git'
+            }
+        }
+
+        stage('Build Docker Image (Frontend)') {
+            steps {
+                echo "🛠 Build de l'image Docker du frontend (CD)..."
+                sh 'docker-compose build frontend'
+            }
+        }
+
+        stage('Deploy Frontend Container') {
+            steps {
+                echo "🚀 Déploiement du conteneur frontend..."
+                // --no-deps pour ne pas toucher au backend/mongo
+                sh 'docker-compose up -d --no-deps --force-recreate frontend'
+            }
+        }
+    }
+
+    post {
+        success { echo "✅ CD FRONT déployé avec succès" }
+        failure { echo "❌ CD FRONT échoué" }
+    }
+}
+

@@ -1,0 +1,55 @@
+pipeline {
+    agent any
+
+    options {
+        skipDefaultCheckout(true)
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo "🔄 CI BACK – Checkout du repository..."
+                deleteDir()
+                git branch: 'main', url: 'https://github.com/medamin87737/SkillUpTnFrontBack.git'
+            }
+        }
+
+        stage('SonarQube Analysis (Backend)') {
+            steps {
+                echo "🔍 Analyse SonarQube du backend..."
+                withSonarQubeEnv('SonarQube') {
+                    script {
+                        def scannerHome = tool 'SonarScanner'
+                        sh """
+                          "${scannerHome}/bin/sonar-scanner" \
+                            -Dsonar.projectKey=SkillUpTN-Backend \
+                            -Dsonar.projectName=SkillUpTN-Backend \
+                            -Dsonar.sources=backend
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image (Backend)') {
+            steps {
+                echo "🛠 Build de l'image Docker du backend (CI)..."
+                sh 'docker-compose build backend'
+            }
+        }
+
+        stage('Run Backend Tests') {
+            steps {
+                echo "🧪 Lancement des tests backend dans le conteneur..."
+                sh 'docker-compose run --rm backend npm run test'
+            }
+        }
+    }
+
+    post {
+        success { echo "✅ CI BACK terminé avec succès" }
+        failure { echo "❌ CI BACK échoué" }
+    }
+}
+
