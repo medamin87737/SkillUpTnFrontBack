@@ -25,9 +25,17 @@ pipeline {
         stage('Deploy Backend + Mongo') {
             steps {
                 echo "🚀 Déploiement du backend (et démarrage de Mongo si besoin)..."
-                // On s'assure que Mongo est lancé puis on (re)déploie le backend
-                sh 'docker-compose up -d mongo'
-                sh 'docker-compose up -d --force-recreate backend'
+                script {
+                    // Évite les conflits de nom de conteneur si un ancien Mongo/backend existe déjà
+                    sh 'docker stop skillup-mongo || true'
+                    sh 'docker rm skillup-mongo || true'
+                    sh 'docker stop skillup-backend || true'
+                    sh 'docker rm skillup-backend || true'
+
+                    // On s'assure que Mongo est lancé puis on (re)déploie le backend
+                    sh 'docker-compose up -d mongo'
+                    sh 'docker-compose up -d --force-recreate backend'
+                }
             }
         }
     }
